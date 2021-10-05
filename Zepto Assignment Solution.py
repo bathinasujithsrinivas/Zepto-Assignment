@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# In[230]:
+# In[14]:
 
 
 #Importing the required libraries
@@ -16,7 +16,7 @@ from email.mime.base import MIMEBase
 from email import encoders
 
 
-# In[231]:
+# In[15]:
 
 
 #Reading the sales data and inventory data into dataframes
@@ -24,14 +24,14 @@ sales_data=pd.read_excel('Zepto Case Study.xlsx',sheet_name='Sales Data')
 inventory_data=pd.read_excel('Zepto Case Study.xlsx',sheet_name='Inventory Data')
 
 
-# In[232]:
+# In[16]:
 
 
 #Grouping the data into product level to extrac the total sales, sales start date and sales end date
 product_sales=sales_data.groupby(['product_variant_id']).agg(total_sales=('quantity_sold','sum'),start_date=('business_date','min'),end_date=('business_date','max')).reset_index()
 
 
-# In[233]:
+# In[17]:
 
 
 #Caluculating the average sales perday for each SKU(Rate of Sales)
@@ -39,26 +39,26 @@ product_sales['no_days']=((product_sales['end_date']-product_sales['start_date']
 product_sales['avg_sales']=product_sales['total_sales']/product_sales['no_days']
 
 
-# In[234]:
+# In[18]:
 
 
 product_sales
 
 
-# In[235]:
+# In[19]:
 
 
 #Joning the product level rate of sales dataframe to the inventory data
 final_ads=pd.merge(inventory_data,product_sales,left_on='product_variant_id',right_on='product_variant_id',how='left')
 
 
-# In[236]:
+# In[20]:
 
 
 final_ads
 
 
-# In[237]:
+# In[21]:
 
 
 #Taking the maximum of lead time and review time to derive no of days for which order should be placed without OOS at product level 
@@ -67,7 +67,7 @@ final_ads['No_days_to_survive']=np.where(final_ads['Lead time ']>final_ads['Revi
 final_ads['No_days_to_survive']=np.where(final_ads['No_days_to_survive']>(final_ads['Shelf life in days']+final_ads['Lead time ']),(final_ads['Shelf life in days']+final_ads['Lead time ']),final_ads['No_days_to_survive'])
 
 
-# In[238]:
+# In[22]:
 
 
 #Total stock is calculated by summing up the stock in hand, Qty in transit and Qty @ Warehouse
@@ -78,7 +78,7 @@ final_ads['safety_stock_needed']=np.where(np.logical_and((final_ads['Sku Classif
 final_ads['total_stock_needed']=(final_ads['avg_sales']*final_ads['No_days_to_survive'])+final_ads['safety_stock_needed']
 
 
-# In[239]:
+# In[23]:
 
 
 #Quantity to order is calculated based on difference between total stock and total stock needed
@@ -86,7 +86,7 @@ final_ads['Qty to order']=np.where(final_ads['total_stock_needed']-final_ads['to
 final_ads['Qty to order'] = final_ads['Qty to order'].apply(np.ceil)
 
 
-# In[240]:
+# In[24]:
 
 
 #Selecting the required columns
@@ -97,7 +97,7 @@ final_ads=final_ads[['product_variant_id', 'Description',
 final_ads.rename(columns={'Shelf life in days':'Shelf life','avg_sales':'Rate of Sales'}, inplace = True)
 
 
-# In[202]:
+# In[25]:
 
 
 #Writing the csv to attach it later to a email
@@ -105,12 +105,12 @@ filename="Replenishment Schedule "+ str(date.today())+'.csv'
 final_ads.to_csv(filename,index=False)
 
 
-# In[203]:
+# In[26]:
 
 
 #Code to send the file in email
-fromaddr = "bathinasujithsrinivas@gmail.com"
-toaddr = ", ".join(['bathinasujithsrinivas@gmail.com','bathinasrisukeerthi@gmail.com'])
+fromaddr = "from email id"
+toaddr = ", ".join(['to email ids'])
    
 # instance of MIMEMultipart
 msg = MIMEMultipart()
@@ -122,7 +122,7 @@ msg['From'] = fromaddr
 msg['To'] = toaddr
   
 # storing the subject 
-msg['Subject'] = "Replenishment Schedule |"+ str(date.today())
+msg['Subject'] = "Assignment | Replenishment Schedule |"+ str(date.today())
   
 # string to store the body of the mail
 body = "Hi All,\nPFA the replenishment schedule for today"
@@ -131,7 +131,8 @@ body = "Hi All,\nPFA the replenishment schedule for today"
 msg.attach(MIMEText(body, 'plain'))
   
 # open the file to be sent 
-attachment = open("C:\\Users\\bsviz\\Downloads\\Zepto Assignment\\"+filename, "rb")
+
+attachment = open(filename, "rb")
   
 # instance of MIMEBase and named as p
 p = MIMEBase('application', 'octet-stream')
@@ -150,10 +151,10 @@ msg.attach(p)
 s = smtplib.SMTP('smtp.gmail.com', 587)
   
 # start TLS for security
-#s.starttls()
+s.starttls()
   
 # Authentication
-s.login(fromaddr, "sujith1A@")
+s.login(fromaddr, "your password")
   
 # Converts the Multipart msg into a string
 text = msg.as_string()
@@ -163,5 +164,4 @@ s.sendmail(fromaddr, toaddr, text)
   
 # terminating the session
 s.quit()
-
 
